@@ -43,7 +43,8 @@ def load_imu_data(filepath):
             vnymr_str = ','.join(vnymr_parts)
             parsed = parse_vnymr_string(vnymr_str)
             if parsed:
-                parsed['time'] = float(row[1])
+                # Properly convert timestamp: sec + nsec
+                parsed['time'] = float(row[0]) + float(row[1]) * 1e-9
                 rows_data.append(parsed)
     result = pd.DataFrame(rows_data)
     result['time'] = result['time'] - result['time'].iloc[0]
@@ -53,15 +54,19 @@ def load_imu_data(filepath):
 def load_gps_data(filepath):
     """Load GPS data from CSV"""
     df = pd.read_csv(filepath, header=None, usecols=[0,1,3,4,5,6,7])
-    df.columns = ['seq', 'time', 'lat', 'lon', 'alt', 'utm_e', 'utm_n']
+    df.columns = ['sec', 'nsec', 'lat', 'lon', 'alt', 'utm_e', 'utm_n']
+    # Properly convert timestamp: sec + nsec
+    df['time'] = df['sec'] + df['nsec'] * 1e-9
     df['time'] = df['time'] - df['time'].iloc[0]
     df.set_index('time', inplace=True)
     return df
 
 def calibrate_magnetometer(mag_data):
     """Calculate hard-iron and soft-iron calibration"""
-    bias = mag_data.mean()
+    # Hard-iron: center of ellipse (min+max)/2
+    bias = (mag_data.max() + mag_data.min()) / 2
     mag_centered = mag_data - bias
+    # Soft-iron: normalize to circle using standard deviation
     scale_factors = 1.0 / mag_centered.std()
     return bias, scale_factors
 
@@ -92,8 +97,8 @@ print("Generating Plot 0...")
 plt.figure(figsize=(10, 6))
 plt.scatter(mag_circles['mag_x'], mag_circles['mag_y'], alpha=0.5, s=10, label='Uncalibrated')
 plt.scatter(mag_calibrated['mag_x'], mag_calibrated['mag_y'], alpha=0.5, s=10, label='Calibrated')
-plt.xlabel('Mag X (µT)')
-plt.ylabel('Mag Y (µT)')
+plt.xlabel('Mag X (Gauss)')
+plt.ylabel('Mag Y (Gauss)')
 plt.title('Plot 0: Magnetometer Calibration (XY Plane)')
 plt.legend()
 plt.axis('equal')

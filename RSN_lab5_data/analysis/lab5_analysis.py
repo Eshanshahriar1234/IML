@@ -70,14 +70,12 @@ def calibrate_magnetometer(mag_data):
     Calibrate magnetometer for hard and soft iron effects
     Returns: bias (hard iron), scale factors (soft iron)
     """
-    # Hard-iron correction: center the data
-    bias = mag_data.mean()
+    # Hard-iron correction: find center of ellipse
+    bias = (mag_data.max() + mag_data.min()) / 2
     centered = mag_data - bias
     
-    # Soft-iron correction: normalize to sphere
-    ranges = centered.max() - centered.min()
-    avg_range = ranges.mean()
-    scale_factors = avg_range / ranges
+    # Soft-iron correction: normalize to circle using standard deviation
+    scale_factors = 1.0 / centered.std()
     
     return bias, scale_factors
 
@@ -137,7 +135,7 @@ print("="*60)
 mag_cal = imu_circles[['mag_x', 'mag_y', 'mag_z']]
 bias, scale_factors = calibrate_magnetometer(mag_cal)
 
-print(f"\nHard-iron bias: X={bias['mag_x']:.4f}, Y={bias['mag_y']:.4f}, Z={bias['mag_z']:.4f} µT")
+print(f"\nHard-iron bias: X={bias['mag_x']:.4f}, Y={bias['mag_y']:.4f}, Z={bias['mag_z']:.4f} Gauss")
 print(f"Soft-iron scale: X={scale_factors['mag_x']:.4f}, Y={scale_factors['mag_y']:.4f}, Z={scale_factors['mag_z']:.4f}")
 
 # Plot 0: Magnetometer calibration
@@ -149,12 +147,12 @@ fig0.add_trace(go.Scatter(x=mag_cal['mag_x'], y=mag_cal['mag_y'],
 fig0.add_trace(go.Scatter(x=mag_calibrated['mag_x'], y=mag_calibrated['mag_y'], 
                           mode='markers', name='Calibrated', marker=dict(size=4)))
 fig0.update_layout(title='Plot 0: Magnetometer Calibration (XY Plane)',
-                   xaxis_title='Mag X (µT)', yaxis_title='Mag Y (µT)',
+                   xaxis_title='Mag X (Gauss)', yaxis_title='Mag Y (Gauss)',
                    width=800, height=600)
 fig0.write_html('../docs/plot0_mag_calibration.html')
-pio.write_image(fig0, '../docs/plot0_mag_calibration.png', width=1200, height=600)
+# pio.write_image(fig0, '../docs/plot0_mag_calibration.png', width=1200, height=600)
 print("\nPlot 0 saved: ../docs/plot0_mag_calibration.html")
-print("Plot 0 saved: ../docs/plot0_mag_calibration.png")
+# print("Plot 0 saved: ../docs/plot0_mag_calibration.png")
 
 # Apply calibration to driving data
 mag_driving = imu_driving[['mag_x', 'mag_y', 'mag_z']]
@@ -174,7 +172,7 @@ fig1.update_layout(title='Plot 1: Magnetometer Yaw Estimation',
                    xaxis_title='Time (s)', yaxis_title='Yaw (degrees)',
                    width=1000, height=500)
 fig1.write_html('../docs/plot1_mag_yaw.html')
-pio.write_image(fig1, '../docs/plot1_mag_yaw.png', width=1200, height=500)
+# pio.write_image(fig1, '../docs/plot1_mag_yaw.png', width=1200, height=500)
 print("Plot 1 saved: ../docs/plot1_mag_yaw.html")
 print("Plot 1 saved: ../docs/plot1_mag_yaw.png")
 
@@ -200,7 +198,7 @@ fig2.update_layout(title='Plot 2: Gyro Yaw Estimation',
                    xaxis_title='Time (s)', yaxis_title='Yaw (degrees)',
                    width=1000, height=500)
 fig2.write_html('../docs/plot2_gyro_yaw.html')
-pio.write_image(fig2, '../docs/plot2_gyro_yaw.png', width=1200, height=500)
+# pio.write_image(fig2, '../docs/plot2_gyro_yaw.png', width=1200, height=500)
 print("Plot 2 saved: ../docs/plot2_gyro_yaw.html")
 print("Plot 2 saved: ../docs/plot2_gyro_yaw.png")
 
@@ -237,7 +235,7 @@ fig3.update_xaxes(title_text="Time (s)")
 fig3.update_yaxes(title_text="Yaw (degrees)")
 fig3.update_layout(height=800, width=1200, title_text="Plot 3: Complementary Filter Analysis")
 fig3.write_html('../docs/plot3_complementary_filter.html')
-pio.write_image(fig3, '../docs/plot3_complementary_filter.png', width=1200, height=800)
+# pio.write_image(fig3, '../docs/plot3_complementary_filter.png', width=1200, height=800)
 print("Plot 3 saved: ../docs/plot3_complementary_filter.html")
 print("Plot 3 saved: ../docs/plot3_complementary_filter.png")
 
@@ -260,7 +258,7 @@ fig4.update_layout(title='Plot 4: Forward Velocity from Accelerometer',
                    xaxis_title='Time (s)', yaxis_title='Velocity (m/s)',
                    width=1000, height=500)
 fig4.write_html('../docs/plot4_accel_velocity.html')
-pio.write_image(fig4, '../docs/plot4_accel_velocity.png', width=1200, height=500)
+# pio.write_image(fig4, '../docs/plot4_accel_velocity.png', width=1200, height=500)
 print("Plot 4 saved: ../docs/plot4_accel_velocity.html")
 print("Plot 4 saved: ../docs/plot4_accel_velocity.png")
 
@@ -280,7 +278,7 @@ fig5.update_layout(title='Plot 5: Forward Velocity from GPS',
                    xaxis_title='Time (s)', yaxis_title='Velocity (m/s)',
                    width=1000, height=500)
 fig5.write_html('../docs/plot5_gps_velocity.html')
-pio.write_image(fig5, '../docs/plot5_gps_velocity.png', width=1200, height=500)
+# pio.write_image(fig5, '../docs/plot5_gps_velocity.png', width=1200, height=500)
 print("Plot 5 saved: ../docs/plot5_gps_velocity.html")
 print("Plot 5 saved: ../docs/plot5_gps_velocity.png")
 
@@ -317,7 +315,7 @@ fig6.update_yaxes(title_text="North (m)", scaleanchor="x", scaleratio=1, row=1, 
 fig6.update_yaxes(title_text="North (m)", scaleanchor="x2", scaleratio=1, row=1, col=2)
 fig6.update_layout(height=600, width=1400, title_text="Plot 6: Trajectory Comparison")
 fig6.write_html('../docs/plot6_trajectory_comparison.html')
-pio.write_image(fig6, '../docs/plot6_trajectory_comparison.png', width=1400, height=600)
+# pio.write_image(fig6, '../docs/plot6_trajectory_comparison.png', width=1400, height=600)
 print("Plot 6 saved: ../docs/plot6_trajectory_comparison.html")
 print("Plot 6 saved: ../docs/plot6_trajectory_comparison.png")
 
